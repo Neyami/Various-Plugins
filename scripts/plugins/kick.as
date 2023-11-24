@@ -9,7 +9,7 @@ void PluginInit()
 
 void MapInit()
 {
-	g_Game.PrecacheModel( m_sKickModel );
+	g_Game.PrecacheModel( nerokick::m_sKickModel );
 
 	g_SoundSystem.PrecacheSound( "bhl/kick.wav" );
 	g_SoundSystem.PrecacheSound( "weapons/cbar_hitbod3.wav" );
