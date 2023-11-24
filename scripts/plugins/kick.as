@@ -45,7 +45,7 @@ HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 	return HOOK_CONTINUE;
 }
 
-void kick( const CCommand@ args )
+void Kick( const CCommand@ args )
 {
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
 
