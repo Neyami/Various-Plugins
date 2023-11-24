@@ -5,7 +5,8 @@ Various plugins that I have made for Sven Co-op.
 # Airstrike
 [Video](https://youtu.be/PXhFxZDNsbg)
 * COMMANDS
-    * `.airstrike <*-*> <*-*> <*-*>` - Launches projectiles from the sky.
+    * `.airstrike help`
+    * `.airstrike <amount 1-25> <type 0-12> <owner 0/1>` - Launches projectiles from the sky.
 
 * CVARS
     * `.airstrike_anywhere` - Allow airstrikes anywhere or only where there is sky? (default: 0)
