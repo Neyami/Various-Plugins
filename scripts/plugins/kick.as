@@ -143,43 +143,24 @@ void kick( const CCommand@ args )
 				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
 		}
 
-
-
-			m_flNextKick[id] = g_Engine.time + m_flKickDelay;
-
-			g_Scheduler.SetTimeout( "KickResetModel", m_flKickDelay, id, sWeaponModel );
-
-		}
-
+		m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+		g_Scheduler.SetTimeout( "KickResetModel", m_flKickDelay, id, sWeaponModel );
 	}
+}
 
+void KickResetModel( const int &in id, const string &in sWeaponModel )
+{
+	CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(id);
 
+	if( pPlayer is null ) return;
 
-	void KickResetModel( const int &in id, const string &in sWeaponModel )
-
+	if( pPlayer.IsAlive() )
 	{
-
-		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(id);
-
-
-
-		if( pPlayer is null ) return;
-
-
-
-		if( pPlayer.IsAlive() )
-
-		{
-
-			if( sWeaponModel == "" or sWeaponModel == m_sKickModel )
-
-				pPlayer.DeployWeapon();
-
-			else
-
-				pPlayer.pev.viewmodel = sWeaponModel;
-
-		}
-
+		if( sWeaponModel == "" or sWeaponModel == m_sKickModel )
+			pPlayer.DeployWeapon();
+		else
+			pPlayer.pev.viewmodel = sWeaponModel;
 	}
+}
+
 } //namespace nerokick END
