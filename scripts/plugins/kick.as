@@ -50,7 +50,7 @@ void Kick( const CCommand@ args )
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
 
 	const int id = pPlayer.entindex();
-	int iMode = args.ArgC() >= 1 ? int(args.Arg(1)) : 1;
+	int iMode = args.ArgC() >= 2 ? int(args.Arg(1)) : 1;
 
 	string sWeaponModel;
 	float flDamage = (iMode == 1 ? m_flKickDamage : 0);
