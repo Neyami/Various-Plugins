@@ -17,6 +17,11 @@ void MapInit()
 	g_Game.PrecacheGeneric( "sound/bhl/kick.wav" );
 }
 
+namespace nerokick
+{
+
+CClientCommand kick( "kick", "Brutal Half-Life kick!", @Kick );
+
 void ClientConnectEvent( CBasePlayer@ pPlayer )
 {
 NerosFunStuff::m_flNextKick[pPlayer.entindex()] = 0.0f;
@@ -272,3 +277,4 @@ void Kick( AFBaseArguments@ args )
 		}
 
 	}
+} //namespace nerokick END
