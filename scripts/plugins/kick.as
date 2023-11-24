@@ -45,197 +45,103 @@ HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 	return HOOK_CONTINUE;
 }
 
-void Kick( AFBaseArguments@ args )
+void kick( const CCommand@ args )
+{
+	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
 
+	const int id = pPlayer.entindex();
+	int iMode = args.ArgC() >= 1 ? int(args.Arg(1)) : 1;
+
+	string sWeaponModel;
+	float flDamage = (iMode == 1 ? m_flKickDamage : 0);
+
+	if( pPlayer.IsAlive() )
 	{
+		if( m_flNextKick[id] >= g_Engine.time ) return;
 
-		CBasePlayer@ pPlayer = args.User;
+		if( pPlayer.m_hActiveItem.GetEntity() is null ) return; //can't be used without a weapon for now
 
-		const int id = pPlayer.entindex();
+		CBasePlayerWeapon@ pWeapon = cast<CBasePlayerWeapon@>( pPlayer.m_hActiveItem.GetEntity() );
 
-		int iMode = args.GetCount() >= 1 ? args.GetInt(0) : 1;
+		//don't allow kick while attacking
+		if( g_Engine.time < pWeapon.m_flNextPrimaryAttack or g_Engine.time < pWeapon.m_flNextSecondaryAttack or g_Engine.time < pWeapon.m_flNextTertiaryAttack ) return;
 
+		pWeapon.m_flNextPrimaryAttack = g_Engine.time + m_flKickDelay;
+		pWeapon.m_flNextSecondaryAttack = g_Engine.time + m_flKickDelay;
+		pWeapon.m_flNextTertiaryAttack = g_Engine.time + m_flKickDelay;
+		pWeapon.m_flTimeWeaponIdle = g_Engine.time + m_flKickDelay;
+		pWeapon.SendWeaponAnim(0);
 
-
-		string sWeaponModel;
-
-		float flDamage = (iMode == 1 ? m_flKickDamage : 0);
-
-
-
-		if( pPlayer.IsAlive() )
-
+		if( pPlayer.pev.FlagBitSet(FL_ONGROUND) )
 		{
+			//somehow prevent motion until kick is done
+			pPlayer.pev.velocity = g_vecZero;
+		}
 
-			if( m_flNextKick[id] >= g_Engine.time ) return;
+		sWeaponModel = pPlayer.pev.viewmodel;
+		pPlayer.pev.viewmodel = m_sKickModel;
 
+		TraceResult tr;
 
+		Math.MakeVectors( pPlayer.pev.v_angle );
+		Vector vecSrc	= pPlayer.GetGunPosition(); //Center() ??
+		Vector vecEnd	= vecSrc + g_Engine.v_forward * m_flKickRange;
 
-			if( pPlayer.m_hActiveItem.GetEntity() is null ) return; //can't be used without a weapon for now
+		g_Utility.TraceLine( vecSrc, vecEnd, dont_ignore_monsters, pPlayer.edict(), tr );
 
+		if( tr.flFraction >= 1.0f )
+		{
+			g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
 
-
-			CBasePlayerWeapon@ pWeapon = cast<CBasePlayerWeapon@>( pPlayer.m_hActiveItem.GetEntity() );
-
-
-
-			//don't allow kick while attacking
-
-			if( g_Engine.time < pWeapon.m_flNextPrimaryAttack or g_Engine.time < pWeapon.m_flNextSecondaryAttack or g_Engine.time < pWeapon.m_flNextTertiaryAttack ) return;
-
-
-
-			pWeapon.m_flNextPrimaryAttack = g_Engine.time + m_flKickDelay;
-
-			pWeapon.m_flNextSecondaryAttack = g_Engine.time + m_flKickDelay;
-
-			pWeapon.m_flNextTertiaryAttack = g_Engine.time + m_flKickDelay;
-
-			pWeapon.m_flTimeWeaponIdle = g_Engine.time + m_flKickDelay;
-
-			pWeapon.SendWeaponAnim(0);
-
-
-
-			if( pPlayer.pev.FlagBitSet(FL_ONGROUND) )
-
+			if( tr.flFraction < 1.0f )
 			{
+				CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
 
-				//somehow prevent motion until kick is done
+				if( pHit is null || pHit.IsBSPModel() )
+					g_Utility.FindHullIntersection( vecSrc, tr, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer.edict() );
 
-				pPlayer.pev.velocity = g_vecZero;
-
+				vecEnd = tr.vecEndPos;
 			}
+		}
 
+		if( tr.flFraction >= 1.0f ) //hit nothing
+		{
+			//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
 
+			g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "bhl/kick.wav", VOL_NORM, ATTN_NORM );
+			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
+		}
+		else
+		{
+			CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
 
-			sWeaponModel = pPlayer.pev.viewmodel;
+			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
 
-			pPlayer.pev.viewmodel = m_sKickModel;
+			g_WeaponFuncs.ClearMultiDamage();
+			pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
+			g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );
 
+			bool bHitWorld = true;
 
-
-			TraceResult tr;
-
-
-
-			Math.MakeVectors( pPlayer.pev.v_angle );
-
-			Vector vecSrc	= pPlayer.GetGunPosition(); //Center() ??
-
-			Vector vecEnd	= vecSrc + g_Engine.v_forward * m_flKickRange;
-
-
-
-			g_Utility.TraceLine( vecSrc, vecEnd, dont_ignore_monsters, pPlayer.edict(), tr );
-
-
-
-			if( tr.flFraction >= 1.0f )
-
+			if( pEntity !is null )
 			{
-
-				g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
-
-
-
-				if( tr.flFraction < 1.0f )
-
-				{
-
-					CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
-
-
-
-					if( pHit is null || pHit.IsBSPModel() )
-
-						g_Utility.FindHullIntersection( vecSrc, tr, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer.edict() );
-
-
-
-					vecEnd = tr.vecEndPos;
-
-				}
-
-			}
-
-
-
-			if( tr.flFraction >= 1.0f ) //hit nothing
-
-			{
-
 				//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
 
-
-
-				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "bhl/kick.wav", VOL_NORM, ATTN_NORM );
-
-				//pPlayer.SetAnimation( PLAYER_ATTACK1 );
-
-			}
-
-			else
-
-			{
-
-				CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
-
-
-
-				//pPlayer.SetAnimation( PLAYER_ATTACK1 );
-
-
-
-				g_WeaponFuncs.ClearMultiDamage();
-
-				pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
-
-				g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );
-
-
-
-				bool bHitWorld = true;
-
-
-
-				if( pEntity !is null )
-
+				if( pPlayer.IRelationship(pEntity) > R_NO and pEntity.Classify() != CLASS_NONE and pEntity.Classify() != CLASS_MACHINE and pEntity.BloodColor() != DONT_BLEED )
 				{
+					Math.MakeVectors( pPlayer.pev.v_angle );
+					pEntity.pev.velocity = g_Engine.v_forward * m_flKickHitVelocity;
+					pEntity.pev.velocity.z += m_flKickHitZBoost;
 
-					//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+					g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "weapons/cbar_hitbod3.wav", VOL_NORM, ATTN_NORM );
 
-
-
-					if( pPlayer.IRelationship(pEntity) > R_NO and pEntity.Classify() != CLASS_NONE and pEntity.Classify() != CLASS_MACHINE and pEntity.BloodColor() != DONT_BLEED )
-
-					{
-
-						Math.MakeVectors( pPlayer.pev.v_angle );
-
-						pEntity.pev.velocity = g_Engine.v_forward * m_flKickHitVelocity;
-
-						pEntity.pev.velocity.z += m_flKickHitZBoost;
-
-
-
-						g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "weapons/cbar_hitbod3.wav", VOL_NORM, ATTN_NORM );
-
-
-
-						bHitWorld = false;
-
-					}
-
+					bHitWorld = false;
 				}
-
-
-
-				if( bHitWorld )
-
-					g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
-
 			}
+
+			if( bHitWorld )
+				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
+		}
 
 
 
