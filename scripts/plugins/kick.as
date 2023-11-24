@@ -2,9 +2,10 @@ void PluginInit()
 {
 	g_Module.ScriptInfo.SetAuthor( "Nero" );
 	g_Module.ScriptInfo.SetContactInfo( "https://discord.gg/0wtJ6aAd7XOGI6vI" );
-}
 
-RegisterCommand( "kick", "!i", "- Brutal Half-Life kick!", AFBase::ACCESS_Z, @NerosFunStuff::Kick );
+	g_Hooks.RegisterHook( Hooks::Player::ClientPutInServer, @nerokick::ClientPutInServer );
+	g_Hooks.RegisterHook( Hooks::Player::ClientDisconnect, @nerokick::ClientDisconnect );
+}
 
 void MapInit()
 {
@@ -22,29 +23,27 @@ namespace nerokick
 
 CClientCommand kick( "kick", "Brutal Half-Life kick!", @Kick );
 
-void ClientConnectEvent( CBasePlayer@ pPlayer )
+const string m_sKickModel = "models/nero/v_kick.mdl";
+const float m_flKickDelay = 0.8f;
+const float m_flKickRange = 64.0f;
+const float m_flKickDamage = 16.0f;
+const float m_flKickHitVelocity = 600.0f;
+const float m_flKickHitZBoost = 64.0f;
+array<float> m_flNextKick(33);
+
+HookReturnCode ClientPutInServer( CBasePlayer@ pPlayer )
 {
-NerosFunStuff::m_flNextKick[pPlayer.entindex()] = 0.0f;
+	m_flNextKick[pPlayer.entindex()] = 0.0f;
+
+	return HOOK_CONTINUE;
 }
 
-void ClientDisconnectEvent( CBasePlayer@ pPlayer )
+HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 {
-NerosFunStuff::m_flNextKick[pPlayer.entindex()] = 0.0f;
+	m_flNextKick[pPlayer.entindex()] = 0.0f;
+
+	return HOOK_CONTINUE;
 }
-
-	const string m_sKickModel = "models/nero/v_kick.mdl";
-
-	const float m_flKickDelay = 0.8f;
-
-	const float m_flKickRange = 64.0f;
-
-	const float m_flKickDamage = 16.0f;
-
-	const float m_flKickHitVelocity = 600.0f;
-
-	const float m_flKickHitZBoost = 64.0f;
-
-	array<float> m_flNextKick(33);
 
 void Kick( AFBaseArguments@ args )
 
