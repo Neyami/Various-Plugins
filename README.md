@@ -3,6 +3,7 @@ Various plugins that I have made for Sven Co-op.
 <BR>
 
 # Airstrike
+[Video](https://youtu.be/PXhFxZDNsbg)
 * COMMANDS
     * `.airstrike` - Launches projectiles from the sky.
 
