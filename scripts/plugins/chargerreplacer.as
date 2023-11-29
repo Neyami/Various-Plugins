@@ -97,8 +97,8 @@ void Replace( const float flTraceLength )
 	{
 		TraceResult tr;
 		Vector origin, vecPlaneNormal;
-		int id;
-		string orientation = "";
+
+		//string orientation = ""; //for testing
 
 		origin = pEntity.Center();
 
@@ -109,7 +109,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "First trace hit!\n" );
 			g_Utility.TraceLine( origin, origin - Vector(flTraceLength, 0, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "South";
+			//orientation = "South"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -129,8 +129,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "Second trace hit!\n" );
 			g_Utility.TraceLine( origin, origin + Vector(flTraceLength, 0, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "North";
-			id = pEntity.entindex();
+			//orientation = "North"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -150,8 +149,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "Third trace hit!\n" );
 			g_Utility.TraceLine( origin, origin - Vector(0, flTraceLength, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "East";
-			id = pEntity.entindex();
+			//orientation = "East"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -171,8 +169,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "Fourth trace hit!\n" );
 			g_Utility.TraceLine( origin, origin + Vector(0, flTraceLength, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "West";
-			id = pEntity.entindex();
+			//orientation = "West"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -187,8 +184,8 @@ void Replace( const float flTraceLength )
 	{
 		TraceResult tr;
 		Vector origin, vecPlaneNormal;
-		int id;
-		string orientation = "";
+
+		//string orientation = ""; //for testing
 
 		origin = pEntity.Center();
 
@@ -199,8 +196,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "First trace hit!\n" );
 			g_Utility.TraceLine( origin, origin - Vector(flTraceLength, 0, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "South";
-			id = pEntity.entindex();
+			//orientation = "South"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -220,8 +216,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "Second trace hit!\n" );
 			g_Utility.TraceLine( origin, origin + Vector(flTraceLength, 0, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "North";
-			id = pEntity.entindex();
+			//orientation = "North"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -241,8 +236,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "Third trace hit!\n" );
 			g_Utility.TraceLine( origin, origin - Vector(0, flTraceLength, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "East";
-			id = pEntity.entindex();
+			//orientation = "East"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
@@ -262,7 +256,7 @@ void Replace( const float flTraceLength )
 		{
 			//g_Game.AlertMessage( at_console, "Fourth trace hit!\n" );
 			g_Utility.TraceLine( origin, origin + Vector(0, flTraceLength, 0), ignore_monsters, pEntity.edict(), tr );
-			orientation = "West";
+			//orientation = "West"; //for testing
 
 			//g_Game.AlertMessage( at_console, "origin for %1 %2: %3 (%4)\n", pEntity.GetClassname(), pEntity.pev.targetname, origin.ToString(), orientation );
 
