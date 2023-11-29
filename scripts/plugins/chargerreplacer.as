@@ -17,8 +17,8 @@ void MapInit()
 			return;
 	}
 
-	g_Game.PrecacheModel( "models/dgf_healthstation.mdl" );
-	g_Game.PrecacheModel( "models/dgf_hevstation.mdl" );
+	g_Game.PrecacheModel( ChargerReplacer::MODEL_HEALTH );
+	g_Game.PrecacheModel( ChargerReplacer::MODEL_HEV );
 	g_Game.PrecacheModel( "sprites/glow01.spr" );
 
 	if( ChargerReplacer::g_bUseCustomSounds )
@@ -334,9 +334,9 @@ void SpawnCharger( const uint &in uiType, const Vector &in origin, const Vector 
 	if( pEntity !is null )
 	{
 		if( uiType == 0 )
-			g_EntityFuncs.SetModel( pEntity, "models/dgf_healthstation.mdl" );
+			g_EntityFuncs.SetModel( pEntity, MODEL_HEALTH );
 		else
-			g_EntityFuncs.SetModel( pEntity, "models/dgf_hevstation.mdl" );
+			g_EntityFuncs.SetModel( pEntity, MODEL_HEV );
 
 		g_EntityFuncs.SetSize( pEntity.pev, g_vecZero, g_vecZero );
 
