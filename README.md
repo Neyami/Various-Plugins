@@ -26,3 +26,15 @@ Various plugins that I have made for Sven Co-op.
 `.kick` - Kick enemies.
 
 `.kick 0` - Kick with no damage.
+
+<BR>
+
+# Charger Replacer
+
+Automatically replaces all vanilla health and armor chargers on the map with any custom model and optionally sounds.
+
+Go to the Customization part of the script and change the model to a custom model you have, preferably one that is the same size as the vanilla ones, or the lights will be off.
+
+The lights are customized for a pair of charger models made by DGF.
+
+The plugin can be disabled on certain maps by modifying `g_CRDisabledMaps`
