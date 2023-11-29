@@ -36,6 +36,6 @@ Automatically replaces all vanilla health and armor chargers on the map with any
 
 Go to the Customization part of the script and change the model to a custom model you have, preferably one that is the same size as the vanilla ones, or the lights will be off.
 
-The lights are customized for a pair of charger models made by DGF.
+The lights are customized for a pair of charger models made by DGF: [Download](https://gamebanana.com/mods/167509)
 
 The plugin can be disabled on certain maps by modifying `g_CRDisabledMaps`
