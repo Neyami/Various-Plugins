@@ -57,6 +57,7 @@ namespace ChargerReplacer
 //test cmd
 //CClientCommand replace( "replace", "Replaces brush chargers with models.", @ReplaceCMD );
 
+//Customization
 const bool g_bUseCustomSounds		= false;
 const string SOUND_HEALTH_START		= "barnacle/bcl_bite3.wav";
 const string SOUND_HEALTH_LOOP		= "barnacle/bcl_alert2.wav";
@@ -66,6 +67,10 @@ const string SOUND_HEV_START		= "barnacle/bcl_bite3.wav";
 const string SOUND_HEV_LOOP			= "barnacle/bcl_alert2.wav";
 const string SOUND_HEV_DENIED		= "barnacle/bcl_chew3.wav";
 
+const string MODEL_HEALTH		= "models/dgf_healthstation.mdl";
+const string MODEL_HEV			= "models/dgf_hevstation.mdl";
+
+
 array<string> g_CRDisabledMaps =
 {
 	"nero_test",
@@ -74,7 +79,7 @@ array<string> g_CRDisabledMaps =
 	"bleh",
 	"feh"
 };
-/*
+/* test command
 void ReplaceCMD( const CCommand@ args )
 {
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
