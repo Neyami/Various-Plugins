@@ -30,6 +30,7 @@ Various plugins that I have made for Sven Co-op.
 <BR>
 
 # Charger Replacer
+[Video](https://youtu.be/-gEXcbFcpwI)
 
 Automatically replaces all vanilla health and armor chargers on the map with any custom model and optionally sounds.
 
