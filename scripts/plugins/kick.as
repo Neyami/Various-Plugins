@@ -16,11 +16,6 @@ void MapInit()
 	g_SoundSystem.PrecacheSound( "zombie/claw_strike1.wav" );
 
 	g_Game.PrecacheGeneric( "sound/bhl/kick.wav" );
-
-	for( uint i = 0; i < 33; i++ )
-	{
-		nerokick::m_flNextKick[i] = 0;
-	}
 }
 
 namespace nerokick
@@ -161,6 +156,14 @@ void KickResetModel( const int &in id, const string &in sWeaponModel )
 
 	if( pPlayer.IsAlive() )
 	{
+		if( pPlayer.m_hActiveItem.GetEntity() !is null )
+		{
+			CBasePlayerWeapon@ pWeapon = cast<CBasePlayerWeapon@>( pPlayer.m_hActiveItem.GetEntity() );
+			pWeapon.m_flNextPrimaryAttack = 0.0f;
+			pWeapon.m_flNextSecondaryAttack = 0.0f;
+			pWeapon.m_flNextTertiaryAttack = 0.0f;
+		}
+
 		if( sWeaponModel == "" or sWeaponModel == m_sKickModel )
 			pPlayer.DeployWeapon();
 		else
