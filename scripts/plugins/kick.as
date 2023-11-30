@@ -16,6 +16,11 @@ void MapInit()
 	g_SoundSystem.PrecacheSound( "zombie/claw_strike1.wav" );
 
 	g_Game.PrecacheGeneric( "sound/bhl/kick.wav" );
+
+	for( uint i = 0; i < 33; i++ )
+	{
+		nerokick::m_flNextKick[i] = 0;
+	}
 }
 
 namespace nerokick
@@ -33,14 +38,14 @@ array<float> m_flNextKick(33);
 
 HookReturnCode ClientPutInServer( CBasePlayer@ pPlayer )
 {
-	m_flNextKick[pPlayer.entindex()] = 0.0f;
+	m_flNextKick[pPlayer.entindex()] = 0;
 
 	return HOOK_CONTINUE;
 }
 
 HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 {
-	m_flNextKick[pPlayer.entindex()] = 0.0f;
+	m_flNextKick[pPlayer.entindex()] = 0;
 
 	return HOOK_CONTINUE;
 }
