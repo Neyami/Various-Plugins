@@ -48,7 +48,6 @@ HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 void Kick( const CCommand@ args )
 {
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
-
 	const int id = pPlayer.entindex();
 	int iMode = args.ArgC() >= 2 ? atoi(args.Arg(1)) : 1;
 
@@ -57,9 +56,11 @@ void Kick( const CCommand@ args )
 
 	if( pPlayer.IsAlive() )
 	{
-		if( m_flNextKick[id] >= g_Engine.time ) return;
-
 		if( pPlayer.m_hActiveItem.GetEntity() is null ) return; //can't be used without a weapon for now
+
+		if( (pPlayer.m_afPhysicsFlags & PFLAG_ONBARNACLE) != 0 ) return; //grabbed by a Barnacle
+
+		if( m_flNextKick[id] >= g_Engine.time ) return; //cooldown
 
 		CBasePlayerWeapon@ pWeapon = cast<CBasePlayerWeapon@>( pPlayer.m_hActiveItem.GetEntity() );
 
@@ -74,7 +75,7 @@ void Kick( const CCommand@ args )
 
 		if( pPlayer.pev.FlagBitSet(FL_ONGROUND) )
 		{
-			//somehow prevent motion until kick is done
+			//todo somehow prevent motion until kick is done
 			pPlayer.pev.velocity = g_vecZero;
 		}
 
@@ -89,64 +90,66 @@ void Kick( const CCommand@ args )
 
 		g_Utility.TraceLine( vecSrc, vecEnd, dont_ignore_monsters, pPlayer.edict(), tr );
 
-		if( tr.flFraction >= 1.0f )
-		{
-			g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
-
-			if( tr.flFraction < 1.0f )
+			if( tr.flFraction >= 1.0f )
 			{
-				CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
+				g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
 
-				if( pHit is null || pHit.IsBSPModel() )
-					g_Utility.FindHullIntersection( vecSrc, tr, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer.edict() );
-
-				vecEnd = tr.vecEndPos;
-			}
-		}
-
-		if( tr.flFraction >= 1.0f ) //hit nothing
-		{
-			//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
-
-			g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "bhl/kick.wav", VOL_NORM, ATTN_NORM );
-			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
-		}
-		else
-		{
-			CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
-
-			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
-
-			g_WeaponFuncs.ClearMultiDamage();
-			pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
-			g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );
-
-			bool bHitWorld = true;
-
-			if( pEntity !is null )
-			{
-				//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
-
-				if( pPlayer.IRelationship(pEntity) > R_NO and pEntity.Classify() != CLASS_NONE and pEntity.Classify() != CLASS_MACHINE and pEntity.BloodColor() != DONT_BLEED )
+				if( tr.flFraction < 1.0f )
 				{
-					Math.MakeVectors( pPlayer.pev.v_angle );
-					pEntity.pev.velocity = g_Engine.v_forward * m_flKickHitVelocity;
-					pEntity.pev.velocity.z += m_flKickHitZBoost;
+					CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
 
-					g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "weapons/cbar_hitbod3.wav", VOL_NORM, ATTN_NORM );
+					if( pHit is null or pHit.IsBSPModel() )
+						g_Utility.FindHullIntersection( vecSrc, tr, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer.edict() );
 
-					bHitWorld = false;
+					vecEnd = tr.vecEndPos;
 				}
 			}
 
-			if( bHitWorld )
-				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
-		}
+			if( tr.flFraction >= 1.0f ) //hit nothing
+			{
+				//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
 
-		m_flNextKick[id] = g_Engine.time + m_flKickDelay;
-		g_Scheduler.SetTimeout( "KickResetModel", m_flKickDelay, id, sWeaponModel );
+				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "bhl/kick.wav", VOL_NORM, ATTN_NORM );
+				//pPlayer.SetAnimation( PLAYER_ATTACK1 );
+			}
+			else
+			{
+				CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
+
+				//pPlayer.SetAnimation( PLAYER_ATTACK1 );
+
+				/*g_WeaponFuncs.ClearMultiDamage();
+				pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
+				g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );*/
+
+				bool bHitWorld = true;
+
+				if( pEntity !is null )
+				{
+					//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+
+					if( pPlayer.IRelationship(pEntity) > R_NO and pEntity.Classify() != CLASS_NONE and pEntity.Classify() != CLASS_MACHINE and pEntity.pev.takedamage != DAMAGE_NO and !pEntity.IsBSPModel() )
+					{
+						Math.MakeVectors( pPlayer.pev.v_angle );
+						pEntity.pev.velocity = g_Engine.v_forward * m_flKickHitVelocity;
+						pEntity.pev.velocity.z += m_flKickHitZBoost;
+
+						pEntity.TakeDamage( pPlayer.pev, pPlayer.pev, flDamage, DMG_CLUB );
+
+						g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "weapons/cbar_hitbod3.wav", VOL_NORM, ATTN_NORM );
+
+						bHitWorld = false;
+					}
+				}
+
+				if( bHitWorld )
+					g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
+			}
+
+			m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+			g_Scheduler.SetTimeout( "KickResetModel", m_flKickDelay, id, sWeaponModel );
+		}
 	}
-}
 
 void KickResetModel( const int &in id, const string &in sWeaponModel )
 {
