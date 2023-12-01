@@ -90,66 +90,66 @@ void Kick( const CCommand@ args )
 
 		g_Utility.TraceLine( vecSrc, vecEnd, dont_ignore_monsters, pPlayer.edict(), tr );
 
-			if( tr.flFraction >= 1.0f )
+		if( tr.flFraction >= 1.0f )
+		{
+			g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
+
+			if( tr.flFraction < 1.0f )
 			{
-				g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
+				CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
 
-				if( tr.flFraction < 1.0f )
-				{
-					CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
+				if( pHit is null or pHit.IsBSPModel() )
+					g_Utility.FindHullIntersection( vecSrc, tr, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer.edict() );
 
-					if( pHit is null or pHit.IsBSPModel() )
-						g_Utility.FindHullIntersection( vecSrc, tr, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer.edict() );
-
-					vecEnd = tr.vecEndPos;
-				}
+				vecEnd = tr.vecEndPos;
 			}
+		}
 
-			if( tr.flFraction >= 1.0f ) //hit nothing
+		if( tr.flFraction >= 1.0f ) //hit nothing
+		{
+			//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+
+			g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "bhl/kick.wav", VOL_NORM, ATTN_NORM );
+			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
+		}
+		else
+		{
+			CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
+
+			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
+
+			/*g_WeaponFuncs.ClearMultiDamage();
+			pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
+			g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );*/
+
+			bool bHitWorld = true;
+
+			if( pEntity !is null )
 			{
 				//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
 
-				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "bhl/kick.wav", VOL_NORM, ATTN_NORM );
-				//pPlayer.SetAnimation( PLAYER_ATTACK1 );
-			}
-			else
-			{
-				CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
-
-				//pPlayer.SetAnimation( PLAYER_ATTACK1 );
-
-				/*g_WeaponFuncs.ClearMultiDamage();
-				pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
-				g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );*/
-
-				bool bHitWorld = true;
-
-				if( pEntity !is null )
+				if( pPlayer.IRelationship(pEntity) > R_NO and pEntity.Classify() != CLASS_NONE and pEntity.Classify() != CLASS_MACHINE and pEntity.pev.takedamage != DAMAGE_NO and !pEntity.IsBSPModel() )
 				{
-					//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+					Math.MakeVectors( pPlayer.pev.v_angle );
+					pEntity.pev.velocity = g_Engine.v_forward * m_flKickHitVelocity;
+					pEntity.pev.velocity.z += m_flKickHitZBoost;
 
-					if( pPlayer.IRelationship(pEntity) > R_NO and pEntity.Classify() != CLASS_NONE and pEntity.Classify() != CLASS_MACHINE and pEntity.pev.takedamage != DAMAGE_NO and !pEntity.IsBSPModel() )
-					{
-						Math.MakeVectors( pPlayer.pev.v_angle );
-						pEntity.pev.velocity = g_Engine.v_forward * m_flKickHitVelocity;
-						pEntity.pev.velocity.z += m_flKickHitZBoost;
+					pEntity.TakeDamage( pPlayer.pev, pPlayer.pev, flDamage, DMG_CLUB );
 
-						pEntity.TakeDamage( pPlayer.pev, pPlayer.pev, flDamage, DMG_CLUB );
+					g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "weapons/cbar_hitbod3.wav", VOL_NORM, ATTN_NORM );
 
-						g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "weapons/cbar_hitbod3.wav", VOL_NORM, ATTN_NORM );
-
-						bHitWorld = false;
-					}
+					bHitWorld = false;
 				}
-
-				if( bHitWorld )
-					g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
 			}
 
-			m_flNextKick[id] = g_Engine.time + m_flKickDelay;
-			g_Scheduler.SetTimeout( "KickResetModel", m_flKickDelay, id, sWeaponModel );
+			if( bHitWorld )
+				g_SoundSystem.EmitSound( pPlayer.edict(), CHAN_WEAPON, "zombie/claw_strike1.wav", VOL_NORM, ATTN_NORM );
 		}
+
+		m_flNextKick[id] = g_Engine.time + m_flKickDelay;
+		g_Scheduler.SetTimeout( "KickResetModel", m_flKickDelay, id, sWeaponModel );
 	}
+}
 
 void KickResetModel( const int &in id, const string &in sWeaponModel )
 {
