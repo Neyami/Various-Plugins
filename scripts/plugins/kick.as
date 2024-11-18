@@ -24,23 +24,23 @@ namespace nerokick
 CClientCommand kick( "kick", "Brutal Half-Life kick!", @Kick );
 
 const string m_sKickModel = "models/nero/v_kick.mdl";
-const float m_flKickDelay = 0.8f;
-const float m_flKickRange = 64.0f;
-const float m_flKickDamage = 16.0f;
-const float m_flKickHitVelocity = 600.0f;
-const float m_flKickHitZBoost = 64.0f;
+const float m_flKickDelay = 0.8;
+const float m_flKickRange = 64.0;
+const float m_flKickDamage = 16.0;
+const float m_flKickHitVelocity = 600.0;
+const float m_flKickHitZBoost = 64.0;
 array<float> m_flNextKick(33);
 
 HookReturnCode ClientPutInServer( CBasePlayer@ pPlayer )
 {
-	m_flNextKick[pPlayer.entindex()] = 0;
+	m_flNextKick[pPlayer.entindex()] = 0.0;
 
 	return HOOK_CONTINUE;
 }
 
 HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 {
-	m_flNextKick[pPlayer.entindex()] = 0;
+	m_flNextKick[pPlayer.entindex()] = 0.0;
 
 	return HOOK_CONTINUE;
 }
@@ -48,8 +48,9 @@ HookReturnCode ClientDisconnect( CBasePlayer@ pPlayer )
 void Kick( const CCommand@ args )
 {
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+
 	const int id = pPlayer.entindex();
-	int iMode = args.ArgC() >= 2 ? atoi(args.Arg(1)) : 1;
+	int iMode = args.ArgC() >= 2 ? atoi( args.Arg(1) ) : 1;
 
 	string sWeaponModel;
 	float flDamage = (iMode == 1 ? m_flKickDamage : 0);
@@ -64,8 +65,9 @@ void Kick( const CCommand@ args )
 
 		CBasePlayerWeapon@ pWeapon = cast<CBasePlayerWeapon@>( pPlayer.m_hActiveItem.GetEntity() );
 
-		//don't allow kick while attacking
+		//don't allow kick while attacking or reloading
 		if( g_Engine.time < pWeapon.m_flNextPrimaryAttack or g_Engine.time < pWeapon.m_flNextSecondaryAttack or g_Engine.time < pWeapon.m_flNextTertiaryAttack ) return;
+		if( pWeapon.m_fInReload ) return;
 
 		pWeapon.m_flNextPrimaryAttack = g_Engine.time + m_flKickDelay;
 		pWeapon.m_flNextSecondaryAttack = g_Engine.time + m_flKickDelay;
@@ -90,11 +92,11 @@ void Kick( const CCommand@ args )
 
 		g_Utility.TraceLine( vecSrc, vecEnd, dont_ignore_monsters, pPlayer.edict(), tr );
 
-		if( tr.flFraction >= 1.0f )
+		if( tr.flFraction >= 1.0 )
 		{
 			g_Utility.TraceHull( vecSrc, vecEnd, dont_ignore_monsters, head_hull, pPlayer.edict(), tr );
 
-			if( tr.flFraction < 1.0f )
+			if( tr.flFraction < 1.0 )
 			{
 				CBaseEntity@ pHit = g_EntityFuncs.Instance( tr.pHit );
 
@@ -105,7 +107,7 @@ void Kick( const CCommand@ args )
 			}
 		}
 
-		if( tr.flFraction >= 1.0f ) //hit nothing
+		if( tr.flFraction >= 1.0 ) //hit nothing
 		{
 			//m_flNextKick[id] = g_Engine.time + m_flKickDelay;
 
@@ -118,9 +120,9 @@ void Kick( const CCommand@ args )
 
 			//pPlayer.SetAnimation( PLAYER_ATTACK1 );
 
-			/*g_WeaponFuncs.ClearMultiDamage();
-			pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
-			g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );*/
+			//g_WeaponFuncs.ClearMultiDamage();
+			//pEntity.TraceAttack( pPlayer.pev, flDamage, g_Engine.v_forward, tr, DMG_CLUB );
+			//g_WeaponFuncs.ApplyMultiDamage( pPlayer.pev, pPlayer.pev );
 
 			bool bHitWorld = true;
 
@@ -159,12 +161,13 @@ void KickResetModel( const int &in id, const string &in sWeaponModel )
 
 	if( pPlayer.IsAlive() )
 	{
+		//some weapons can't be fired after kicking for some reason
 		if( pPlayer.m_hActiveItem.GetEntity() !is null )
 		{
 			CBasePlayerWeapon@ pWeapon = cast<CBasePlayerWeapon@>( pPlayer.m_hActiveItem.GetEntity() );
-			pWeapon.m_flNextPrimaryAttack = 0.0f;
-			pWeapon.m_flNextSecondaryAttack = 0.0f;
-			pWeapon.m_flNextTertiaryAttack = 0.0f;
+			pWeapon.m_flNextPrimaryAttack = 0.0;
+			pWeapon.m_flNextSecondaryAttack = 0.0;
+			pWeapon.m_flNextTertiaryAttack = 0.0;
 		}
 
 		if( sWeaponModel == "" or sWeaponModel == m_sKickModel )
