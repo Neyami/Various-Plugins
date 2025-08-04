@@ -1,0 +1,28 @@
+//This is a comment
+//Each language has to start with [twoLetterLanguageCode] (Google them)
+//Separate the localization entries with an equals sign (=)
+//$1 $2 $3 etc. up to $8 can be used to dynamically replace them in your script
+//END EACH LANGUAGE'S LOCALIZATION SET WITH AN EMPTY LINE
+//I might fix this at some point.
+
+
+[en]
+LANGUAGE_SET = [LOCALIZATION] Language set to $1
+LANGUAGE_UNKNOWN = [LOCALIZATION] Unknown language code. Try using "!lang menu"
+ADMIN_ONLY = [LOCALIZATION] That command is only for admins.
+ADMIN_NOTHING = [LOCALIZATION] Nothing to save.
+MENU_LANGUAGE = Choose your language
+
+[es]
+LANGUAGE_SET = [LOCALIZACIÓN] Idioma establecido en $1
+LANGUAGE_UNKNOWN = [LOCALIZACIÓN] Código de idioma desconocido. Intentas usar "!lang menu"
+ADMIN_ONLY = [LOCALIZACIÓN] Ese comando es solo para administradores.
+ADMIN_NOTHING = [LOCALIZACIÓN] Nada que salvar.
+MENU_LANGUAGE = Elige tu idioma
+
+[fr]
+LANGUAGE_SET = [La baguette] La baguette
+LANGUAGE_UNKNOWN = [La baguette] La baguette
+ADMIN_ONLY = [La baguette] La baguette
+ADMIN_NOTHING = [La baguette] La baguette
+MENU_LANGUAGE = La baguette
