@@ -43,7 +43,25 @@ The plugin can be disabled on certain maps by modifying `g_CRDisabledMaps`
 <BR>
 
 # Localization
-[Video](https://youtu.be/4DtyB2vqBKY)
+[Video](https://youtu.be/4DtyB2vqBKY)  
+
+The plugin handles saving and loading of player's chosen language.  
+CONSOLE COMMAND(S):  
+
+* .langsave  
+Forces playerLanguages.txt to save (if any changes have been made).  
+Admin only.  
+
+
+CHAT COMMAND(S):  
+
+* !lang languageCode  
+Sets your language  
+Public  
+
+* !lang menu  
+Opens the language selection menu  
+Public  
 
 Include scripts\localization in your script/plugin.  
 Modify the three lists according to your wishes (enum lang_e, arrsLanguagesCodes, dicLanguageNames)  
