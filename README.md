@@ -91,3 +91,15 @@ eg: teamMenu.SetTitle( lang::getLocalizedText(pPlayer, "MENU_TEAM") );
 iNameType look at the enum langname_e and the dictionary dicLanguageNames for the explanation.  
 
 <BR>
+
+# Medkit Regen
+
+* Commands  
+`.mr_rate` - Checks/sets regen rate (in seconds).  
+`.mr_amount` - Checks/sets regen amount.
+
+* CVars (can be added to map.cfg)  
+`as_command mr-rate #`  
+`as_command mr-amount #`
+
+<BR>
