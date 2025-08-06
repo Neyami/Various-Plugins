@@ -28,7 +28,7 @@ void MedkitRegen()
 	{
 		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
 
-		if( pPlayer is null or !pPlayer.IsConnected() )
+		if( pPlayer is null or !pPlayer.IsConnected() or !pPlayer.IsAlive() )
 			continue;
 
 		if( pPlayer.m_rgAmmo(g_PlayerFuncs.GetAmmoIndex("health")) <= (pPlayer.GetMaxAmmo("health") - cvar_iRechargeAmount.GetInt()) )
@@ -74,5 +74,6 @@ void MRSettings( const CCommand@ args )
 		}
 	}
 }
+
 
 }
