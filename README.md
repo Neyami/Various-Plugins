@@ -92,8 +92,9 @@ Look at the enum langname_e and the dictionary dicLanguageNames for the explanat
 [Video 1](https://youtu.be/v-5u5B2BHhg)  
 [Video 2](https://youtu.be/LRSwzz6XpSs)  
 
-1) Include the maprestore script in your plugin / script.
+1) Include the maprestore script in your plugin / script.  
 2) `maprestore::Initialize();` in MapActivate (or MapInit ??)
+3) Or use the MapRestorePlugin (don't use both!)  
 
 * Commands  
 `restore classname` - Restores all entities with the supplied classname. - Admin only.  
