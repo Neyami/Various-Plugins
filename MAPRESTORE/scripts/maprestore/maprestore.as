@@ -11,8 +11,8 @@
 namespace maprestore
 {
 
-CClientCommand restore_all( "restore_all", "Restores all entities.", @maprestore::RestoreAll );
-CClientCommand restore( "restore", "Restores all entities of the specified class.", @maprestore::RestoreByClass ); //restore_by_class
+//CClientCommand restore_all( "restore_all", "Restores all entities.", @maprestore::RestoreAllCMD );
+CClientCommand restore( "restore", "Restores all entities of the specified class. Enter * for all.", @maprestore::RestoreByClassCMD ); //restore_by_class
 
 bool g_bDebug = false;
 
@@ -24,10 +24,18 @@ void Initialize()
 	maprestore::BmodelsMapActivate();
 }
 
-void RestoreAll( const CCommand@ args )
+void RestoreAllCMD( const CCommand@ args )
 {
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
 
+	if( RestoreAll() )
+		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Restored everything.\n" );
+	else
+		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Nothing to restore.\n" );
+}
+
+bool RestoreAll()
+{
 	bool bRestoredBreakables = RestoreBreakables();
 	bool bRestoredPushables = RestorePushables();
 	bool bRestoredLights = RestoreLights();
@@ -39,22 +47,38 @@ void RestoreAll( const CCommand@ args )
 	bool bRestoredRotDoors = RestoreRotDoors();
 
 	if( !bRestoredBreakables and !bRestoredPushables and !bRestoredLights and !bRestoredButtons and !bRestoredRotButtons and !bRestoredEnv and !bRestoredBmodels and !bRestoredDoors and !bRestoredRotDoors )
-		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Nothing to restore.\n" );
+		return false;
 	else
-		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCENTER, "Restored everything.\n" );
+		return true;
 }
 
-void RestoreByClass( const CCommand@ args )
+void RestoreByClassCMD( const CCommand@ args )
 {
 	CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
 
 	if( args.ArgC() < 2 )
 	{
-		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "restore_by_class <classname>\n" );
+		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "restore <classname> or * for all\n" );
 		return;
 	}
 
 	string sClassname = args.Arg( 1 );
+
+	if( sClassname == "*" )
+		RestoreAllCMD( args );
+	else
+	{
+		bool bNothingToRestore = RestoreByClass( sClassname );
+
+		if( bNothingToRestore )
+			g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Map has no " + sClassname + " entities to restore.\n" );
+		else
+			g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Restored all " + sClassname + " entities.\n" );
+	}
+}
+
+bool RestoreByClass( const string &in sClassname )
+{
 	bool bNothingToRestore = false;
 
 	if( sClassname == "func_breakable" )
@@ -108,10 +132,7 @@ void RestoreByClass( const CCommand@ args )
 			bNothingToRestore = true;
 	}
 
-	if( bNothingToRestore )
-		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Map has no " + sClassname + " entities to restore.\n" );
-	else
-		g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCONSOLE, "Restored all " + sClassname + " entities.\n" );
+	return bNothingToRestore;
 }
 
 void SetMovedir( CBaseEntity@ pEntity )
