@@ -89,6 +89,8 @@ Look at the enum langname_e and the dictionary dicLanguageNames for the explanat
 <BR>
 
 # MAPRESTORE (WIP)  
+[Video 1](https://youtu.be/v-5u5B2BHhg)  
+[Video 2](https://youtu.be/LRSwzz6XpSs)  
 
 1) Include the maprestore script in your plugin / script.
 2) `maprestore::Initialize();` in MapActivate (or MapInit ??)
