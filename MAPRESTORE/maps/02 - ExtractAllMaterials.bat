@@ -1,0 +1,1 @@
+FOR /r %%G IN (*.ent) DO ExtractMaterials.py "%%G"
