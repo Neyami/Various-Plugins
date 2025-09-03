@@ -93,8 +93,11 @@ Look at the enum langname_e and the dictionary dicLanguageNames for the explanat
 [Video 2](https://youtu.be/LRSwzz6XpSs)  
 
 1) Include the maprestore script in your plugin / script.  
-2) `maprestore::Initialize();` in MapActivate (or MapInit ??)
+2) `maprestore::Initialize();` in MapActivate (or MapInit ??)  
 3) Or use the MapRestorePlugin (don't use both!)  
+4) To make sure your breakables have the correct material type set when restored, check the maps folder.  
+5) "01 - ExtractAllEntfiles.bat" will run ripent on all .bsp files in the folder (on after the other, not all at once)  
+6) "02 - ExtractAllMaterials.bat" will run the python script on all .ent files in the folder and create .mat files that the script uses.  
 
 * Commands  
 `restore classname` - Restores all entities with the supplied classname. - Admin only.  
