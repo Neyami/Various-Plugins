@@ -97,7 +97,8 @@ Look at the enum langname_e and the dictionary dicLanguageNames for the explanat
 3) Or use the MapRestorePlugin (don't use both!)  
 4) To make sure your breakables have the correct material type set when restored, check the maps folder.  
 5) "01 - ExtractAllEntfiles.bat" will run ripent on all .bsp files in the folder (on after the other, not all at once)  
-6) "02 - ExtractAllMaterials.bat" will run the python script on all .ent files in the folder and create .mat files that the script uses.  
+6) "02 - ExtractAllMaterials.bat" will run the python script on all .ent files in the folder and create .mat files that the script uses.
+7) Move all of the .mat files into "\svencoop_addon\scripts\maps\maprestore\matfiles"  
 
 * Commands  
 `restore classname` - Restores all entities with the supplied classname. - Admin only.  
