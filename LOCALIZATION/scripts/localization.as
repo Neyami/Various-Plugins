@@ -3,7 +3,7 @@
 * https://www.reddit.com/r/svencoop
 *
 * Include this in your script/plugin.
-* Modify the three lists according to your wishes.
+* Modify the three lists according to your wishes. (lang_e, arrsLanguagesCodes, dicLanguageNames)
 *
 * Read the example language file in scripts\plugins\data\lang\localization.txt
 * If your script is a map script, the file needs to be in scripts\maps\data\lang\
@@ -50,6 +50,7 @@ enum lang_e
 {
 	LANG_INVALID = -1,
 	LANG_ENGLISH = 0,
+	LANG_SWEDISH,
 	LANG_SPANISH,
 	LANG_FRENCH,
 	LANG_JAPANESE
@@ -58,6 +59,7 @@ enum lang_e
 const array<string> arrsLanguagesCodes = 
 {
 	"en",
+	"sv",
 	"es",
 	"fr",
 	"ja"
@@ -66,6 +68,7 @@ const array<string> arrsLanguagesCodes =
 const dictionary dicLanguageNames = 
 {
 	{ "en", "English" },
+	{ "sv", "Swedish,Svenska,Espanol" },
 	{ "es", "Spanish,Español,Espanol" },
 	{ "fr", "French,Français,Francais" },
 	{ "ja", "Japanese,日本語,nihongo" }
@@ -115,6 +118,18 @@ string getLocalizedText( CBasePlayer@ pPlayer, const string &in sString )
 	int iLanguage = GetKVInt( pPlayer, KVN_LANGUAGE );
 
 	//default to English if the player's chosen language has no entries
+	if( arrdicLocalizations[iLanguage].isEmpty() )
+		iLanguage = LANG_ENGLISH;
+
+	if( arrdicLocalizations[iLanguage].exists(sString) )
+		return string( arrdicLocalizations[iLanguage][sString] );
+
+	return sString;
+}
+
+string getStringFromLanguage( int iLanguage, const string &in sString )
+{
+	//default to English if the chosen language has no entries
 	if( arrdicLocalizations[iLanguage].isEmpty() )
 		iLanguage = LANG_ENGLISH;
 
