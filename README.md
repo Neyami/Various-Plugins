@@ -119,5 +119,17 @@ Look at the enum langname_e and the dictionary dicLanguageNames for the explanat
 `as_command mr-rate #`  
 `as_command mr-amount #`
 
+
+# Healthbar Map Entity  
+[Video](https://youtu.be/iVAnHnF-Qs8)  
+
+Check the script and .fgd for info
+
+
+
+<BR>
+
+
+
 <BR>
 
