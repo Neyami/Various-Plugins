@@ -1,0 +1,17 @@
+@PointClass base(EditorFlags, Targetname) color(255 0 255) size(-8 -8 -8, 8 8 8) = target_healthbar : "Monster Health bar"
+[
+    spawnflags(Flags) =
+    [
+        1 : "PVS Only" : 0
+		2 : "Use Player's Name" : 0
+		4 : "Use Monster's Displayname" : 0
+    ]
+	delay(float) : "Delay before healthbar disappears after death" : "0.0"
+	message(string) : "Boss name to show on HUD" : ""
+	target(string): "Boss targetname" : ""
+	leftbarbg(string): "Sprite for the left part of the healthbar background (untested)" : "quake2/healthbar_bg-left.spr"
+	rightbarbg(string): "Sprite for the righ part of the healthbar background (untested)" : "quake2/healthbar_bg-right.spr"
+	leftbar(string): "Sprite for the left part of the healthbar (untested)" : "quake2/healthbar-left.spr"
+	rightbar(string): "Sprite for the right part of the healthbar (untested)" : "quake2/healthbar-right.spr"
+	widthmax(integer) : "Total width of the healthbar (in pixels)" : "944"
+]
