@@ -123,7 +123,11 @@ Look at the enum langname_e and the dictionary dicLanguageNames for the explanat
 # Healthbar Map Entity  
 [Video](https://youtu.be/iVAnHnF-Qs8)  
 
-Check the script and .fgd for info
+Check the script and .fgd for info  
+Required keyvalues:  
+"target": Targetname of the entity to monitor  
+"message": Boss name to show on HUD  
+If no "message" is entered, the spawnflag "Use Monster's Displayname" (4) is required. ("Use Player's Name" (2) if it's a player)
 
 
 
