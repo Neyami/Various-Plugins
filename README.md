@@ -127,7 +127,7 @@ Check the script and .fgd for info.
 
 Required keyvalues:  
 "target": Targetname of the entity to monitor  
-"message": Boss name to show on HUD  
+"message": Name to show on HUD  
 If no "message" is entered, the spawnflag "Use Monster's Displayname" (4) is required. ("Use Player's Name" (2) if it's a player)
 
 
