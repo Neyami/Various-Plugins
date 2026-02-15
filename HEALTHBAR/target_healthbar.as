@@ -2,7 +2,7 @@
 * 
 * Hook up health bars to monsters.
 * "delay" is how long to show the health bar for after death.
-* "message" is their name (one name for both healthbars)
+* "message" is their displayed name (one name for both healthbars)
 * "offset" is the vertical distance between the two healthbars
 *
 * the following are untested
@@ -416,5 +416,6 @@ void Register()
 	g_CustomEntityFuncs.RegisterCustomEntity( "target_healthbar::target_healthbar", "target_healthbar" );
 	g_Game.PrecacheOther( "target_healthbar" );
 }
+
 
 } //end of namespace target_healthbar
