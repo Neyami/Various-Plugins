@@ -115,8 +115,6 @@ class target_healthbar : ScriptBaseEntity
 		m_iBarValue = 0; //max
 
 		SetUse( UseFunction(this.use_target_healthbar) );
-		SetThink( ThinkFunction(this.check_target_healthbar) );
-		pev.nextthink = g_Engine.time + 0.025;
 	}
 
 	void Precache()
@@ -125,22 +123,6 @@ class target_healthbar : ScriptBaseEntity
 		g_Game.PrecacheModel( "sprites/" + m_sHealthbarBGRight );
 		g_Game.PrecacheModel( "sprites/" + m_sHealthbarLeft );
 		g_Game.PrecacheModel( "sprites/" + m_sHealthbarRight );
-	}
-
-	void check_target_healthbar()
-	{
-		CBaseEntity@ target = g_EntityFuncs.FindEntityByTargetname( null, string(pev.target) );
-		if( target is null /*or !target.pev.FlagBitSet(FL_MONSTER)*/ )
-		{
-			if( target !is null )
-				g_Game.AlertMessage( at_error, "%1: target %2 does not appear to be a monster\n", self.GetClassname(), target.GetClassname() );
-
-			g_EntityFuncs.Remove( self );
-			return;
-		}
-
-		// just for sanity check
-		//pev.health = target->spawn_count;
 	}
 
 	void HealthbarThink()
@@ -168,12 +150,9 @@ class target_healthbar : ScriptBaseEntity
 	{
 		CBaseEntity@ target = g_EntityFuncs.FindEntityByTargetname( null, string(pev.target) );
 
-		if( target is null /*or ent->health != target->spawn_count*/ )
+		if( target is null )
 		{
-			if( target !is null )
-				g_Game.AlertMessage( at_error, "%1: target %2 changed from what it used to be\n", self.GetClassname(), target.GetClassname() );
-			else
-				g_Game.AlertMessage( at_error, "%1: no target\n", self.GetClassname() );
+			g_Game.AlertMessage( at_error, "%1: no target\n", self.GetClassname() );
 
 			g_EntityFuncs.Remove( self );
 			return;
