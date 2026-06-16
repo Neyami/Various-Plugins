@@ -25,11 +25,13 @@
 namespace target_healthbar
 {
 
+const float THINK_RATE	= 0.25; //0.025 original
+
 const int SPAWNFLAG_HEALTHBAR_PVS_ONLY			= 1;
 const int SPAWNFLAG_HEALTHBAR_PLAYERNAME		= 2;
 const int SPAWNFLAG_HEALTHBAR_DISPLAYNAME	= 4;
 
-const int MAX_HEALTH_BARS			= 2; //2 max, at least for now
+const int MAX_HEALTH_BARS			= 2; //2 max, at least for now (limited by the number of sprite channels blyat)
 const int HUD_TEXT_HEALTHBAR	= 1;
 const int HUD_SPRITE_HB_BG_L		= 1;
 const int HUD_SPRITE_HB_BG_R		= 2;
@@ -37,13 +39,13 @@ const int HUD_SPRITE_HB_L			= 3;
 const int HUD_SPRITE_HB_R			= 4;
 
 //these two need to be global
-array<EHandle> health_bar_entities( MAX_HEALTH_BARS );
+array<EHandle> g_arrehHealthBarEntities( MAX_HEALTH_BARS );
 string CONFIG_HEALTH_BAR_NAME = "";
 
 class target_healthbar : ScriptBaseEntity
 {
 	private EHandle m_hTarget;
-	private float m_flDelay;
+	private float m_flDelay = 3.0;
 	private int m_iBarValue;
 	private float m_flTimeToRemove;
 	private float m_flOffset = 0.035; //distance between the two healthbars
@@ -52,6 +54,18 @@ class target_healthbar : ScriptBaseEntity
 	private string m_sHealthbarBGRight = "quake2/healthbar_bg-right.spr";
 	private string m_sHealthbarLeft = "quake2/healthbar-left.spr";
 	private string m_sHealthbarRight = "quake2/healthbar-right.spr";
+
+	private HUDTextParams m_textParms;
+	private HUDSpriteParams m_hudParamsHealthbarBG_L;
+	private HUDSpriteParams m_hudParamsHealthbarBG_R;
+	private HUDSpriteParams m_hudParamsHealthbar_L;
+	private HUDSpriteParams m_hudParamsHealthbar_R;
+
+	private int m_iLastBarValue = -99999;
+	private float m_flNextPVSCheck = 0.0;
+
+	private array<bool> m_bVisibleToPlayer( 33, false );
+	array<bool> m_bHUDInitializedPlayer( 33, false );
 
 	bool KeyValue( const string& in szKey, const string& in szValue )
 	{
@@ -103,7 +117,7 @@ class target_healthbar : ScriptBaseEntity
 			return;
 		}
 
-		if( !HasFlags(pev.spawnflags, SPAWNFLAG_HEALTHBAR_PLAYERNAME|SPAWNFLAG_HEALTHBAR_DISPLAYNAME) and string(pev.message).IsEmpty() )
+		if( !pev.SpawnFlagBitSet(SPAWNFLAG_HEALTHBAR_PLAYERNAME|SPAWNFLAG_HEALTHBAR_DISPLAYNAME) and string(pev.message).IsEmpty() )
 		{
 			g_Game.AlertMessage( at_error, "%1: missing message\n", self.GetClassname() );
 			g_EntityFuncs.Remove( self );
@@ -113,6 +127,8 @@ class target_healthbar : ScriptBaseEntity
 		Precache();
 
 		m_iBarValue = 0; //max
+
+		InitializeHUDParams();
 
 		SetUse( UseFunction(this.use_target_healthbar) );
 	}
@@ -125,25 +141,74 @@ class target_healthbar : ScriptBaseEntity
 		g_Game.PrecacheModel( "sprites/" + m_sHealthbarRight );
 	}
 
+	void InitializeHUDParams()
+	{
+		m_textParms.fadeinTime = 0.0;
+		m_textParms.fadeoutTime = 0.1;
+		m_textParms.holdTime = 99999.0; //0.02;
+		m_textParms.effect = 0;
+		m_textParms.channel = HUD_TEXT_HEALTHBAR;
+		m_textParms.x = -1.0;
+		m_textParms.y = 0.1;
+		m_textParms.r1 = 0;
+		m_textParms.g1 = 255;
+		m_textParms.b1 = 255;
+		m_textParms.r2 = 0;
+		m_textParms.g2 = 0;
+		m_textParms.b2 = 255;
+
+		m_hudParamsHealthbarBG_L.channel = IsTopHealthbar() ? HUD_SPRITE_HB_BG_L : HUD_SPRITE_HB_BG_L+4;
+		m_hudParamsHealthbarBG_L.flags = HUD_SPR_MASKED;
+		m_hudParamsHealthbarBG_L.spritename = m_sHealthbarBGLeft;
+		m_hudParamsHealthbarBG_L.x = 0.25;
+		m_hudParamsHealthbarBG_L.y = 0.13 + GetHealthbarOffset();
+		m_hudParamsHealthbarBG_L.color1 = RGBA_WHITE;
+		m_hudParamsHealthbarBG_L.holdTime = 99999.0;
+
+		m_hudParamsHealthbarBG_R.channel = IsTopHealthbar() ? HUD_SPRITE_HB_BG_R : HUD_SPRITE_HB_BG_R+4;
+		m_hudParamsHealthbarBG_R.flags = HUD_SPR_MASKED;
+		m_hudParamsHealthbarBG_R.spritename = m_sHealthbarBGRight;
+		m_hudParamsHealthbarBG_R.x = 0.5;
+		m_hudParamsHealthbarBG_R.y = 0.13 + GetHealthbarOffset();
+		m_hudParamsHealthbarBG_R.color1 = RGBA_WHITE;
+		m_hudParamsHealthbarBG_R.holdTime = 99999.0;
+
+		int iHalfWidth = int( m_flWidthMax / 2 );
+
+		m_hudParamsHealthbar_L.fadeinTime = 0.0;
+		m_hudParamsHealthbar_L.fadeoutTime = 0.1;
+		m_hudParamsHealthbar_L.holdTime = 99999.0; //0.02;
+		m_hudParamsHealthbar_L.effect = 0;
+		m_hudParamsHealthbar_L.channel = IsTopHealthbar() ? HUD_SPRITE_HB_L : HUD_SPRITE_HB_L+4;
+		m_hudParamsHealthbar_L.flags = HUD_SPR_MASKED;
+		m_hudParamsHealthbar_L.spritename = m_sHealthbarLeft;
+		m_hudParamsHealthbar_L.x = 0.25;
+		m_hudParamsHealthbar_L.y = 0.13 + GetHealthbarOffset();
+		m_hudParamsHealthbar_L.width = (m_iBarValue >= iHalfWidth) ? iHalfWidth : m_iBarValue; //hudParamsHealthbar_L.width = m_iBarValue > (m_flWidthMax/2) ? 0 : m_iBarValue;
+		m_hudParamsHealthbar_L.color1 = RGBA_WHITE;
+		m_hudParamsHealthbar_L.frame = 0;
+
+		m_hudParamsHealthbar_R.fadeinTime = 0.0;
+		m_hudParamsHealthbar_R.fadeoutTime = 0.1;
+		m_hudParamsHealthbar_R.holdTime = 99999.0; //0.02;
+		m_hudParamsHealthbar_R.effect = 0;
+		m_hudParamsHealthbar_R.channel = IsTopHealthbar() ? HUD_SPRITE_HB_R : HUD_SPRITE_HB_R+4;
+		m_hudParamsHealthbar_R.flags = HUD_SPR_MASKED;
+		m_hudParamsHealthbar_R.spritename = m_sHealthbarRight;
+		m_hudParamsHealthbar_R.x = 0.5;
+		m_hudParamsHealthbar_R.y = 0.13 + GetHealthbarOffset();
+		m_hudParamsHealthbar_R.width = (m_iBarValue > iHalfWidth) ? m_iBarValue - iHalfWidth : 0; //hudParamsHealthbar_R.width = m_iBarValue - int( m_flWidthMax / 2 );
+		m_hudParamsHealthbar_R.color1 = RGBA_WHITE;
+		m_hudParamsHealthbar_R.frame = 0;
+	}
+
 	void HealthbarThink()
 	{
 		UpdateHealthbarValue();
 
-		for( int i = 1; i <= g_Engine.maxClients; ++i )
-		{
-			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( i );
+		DrawHUD();
 
-			if( pPlayer !is null and pPlayer.IsConnected() )
-			{
-				if( HasFlags(pev.spawnflags, SPAWNFLAG_HEALTHBAR_PVS_ONLY) and !inPVS(pPlayer) )
-					continue;
-
-				DrawText( pPlayer );
-				DrawHealthbar( pPlayer );
-			}
-		}
-
-		pev.nextthink = g_Engine.time + 0.025;
+		pev.nextthink = g_Engine.time + THINK_RATE;
 	}
 
 	void use_target_healthbar( CBaseEntity@ pActivator, CBaseEntity@ pCaller, USE_TYPE useType, float flValue )
@@ -160,15 +225,15 @@ class target_healthbar : ScriptBaseEntity
 
 		for( int i = 0; i < MAX_HEALTH_BARS; i++ )
 		{
-			if( health_bar_entities[i].IsValid() )
+			if( g_arrehHealthBarEntities[i].IsValid() )
 				continue;
 
 			m_hTarget = EHandle( target );
-			health_bar_entities[i] = EHandle( self );
+			g_arrehHealthBarEntities[i] = EHandle( self );
 
-			if( target.pev.FlagBitSet(FL_CLIENT) and HasFlags(pev.spawnflags, SPAWNFLAG_HEALTHBAR_PLAYERNAME) )
+			if( target.pev.FlagBitSet(FL_CLIENT) and pev.SpawnFlagBitSet(SPAWNFLAG_HEALTHBAR_PLAYERNAME) )
 				CONFIG_HEALTH_BAR_NAME = string( target.pev.netname );
-			else if( target.pev.FlagBitSet(FL_MONSTER) and HasFlags(pev.spawnflags, SPAWNFLAG_HEALTHBAR_DISPLAYNAME) )
+			else if( target.pev.FlagBitSet(FL_MONSTER) and pev.SpawnFlagBitSet(SPAWNFLAG_HEALTHBAR_DISPLAYNAME) )
 			{
 				CBaseMonster@ pMonster = target.MyMonsterPointer();
 				if( pMonster !is null )
@@ -179,8 +244,10 @@ class target_healthbar : ScriptBaseEntity
 
 			SetUse( null );
 
+			InitializeHUD();
+
 			SetThink( ThinkFunction(this.HealthbarThink) );
-			pev.nextthink = g_Engine.time + 0.025;
+			pev.nextthink = g_Engine.time + THINK_RATE;
 
 			return;
 		}
@@ -189,35 +256,104 @@ class target_healthbar : ScriptBaseEntity
 		g_EntityFuncs.Remove( self );
 	}
 
-	bool ShouldDrawText()
+	void ResetHUDInitialized()
 	{
-		if( health_bar_entities[0].IsValid() and health_bar_entities[1].IsValid() )
+		for( int i = 1; i <= g_Engine.maxClients; ++i )
 		{
-			if( health_bar_entities[1].GetEntity() is self )
-				return true;
+			if( GetTopHealthbar() !is null )
+			{
+				GetTopHealthbar().m_bHUDInitializedPlayer[ i ] = false;
+				GetTopHealthbar().InitializeHUD();
+			}
+
+			if( GetBottomHealthbar() !is null )
+			{
+				GetBottomHealthbar().m_bHUDInitializedPlayer[ i ] = false;
+				GetBottomHealthbar().InitializeHUD();
+			}
 		}
-		else if( health_bar_entities[0].IsValid() and health_bar_entities[0].GetEntity() is self )
+	}
+
+	bool IsTopHealthbar()
+	{
+		if( g_arrehHealthBarEntities[0].IsValid() and g_arrehHealthBarEntities[0].GetEntity() is self )
 			return true;
 
 		return false;
 	}
 
+	target_healthbar@ GetTopHealthbar()
+	{
+		if( g_arrehHealthBarEntities[0].IsValid() )
+			return cast<target_healthbar@>( CastToScriptClass(g_arrehHealthBarEntities[0].GetEntity()) );
+
+		return null;
+	}
+
+	target_healthbar@ GetBottomHealthbar()
+	{
+		if( g_arrehHealthBarEntities[1].IsValid() )
+			return cast<target_healthbar@>( CastToScriptClass(g_arrehHealthBarEntities[1].GetEntity()) );
+
+		return null;
+	}
+
 	float GetHealthbarOffset()
 	{
-		if( health_bar_entities[0].IsValid() and health_bar_entities[1].IsValid() )
+		if( g_arrehHealthBarEntities[0].IsValid() and g_arrehHealthBarEntities[1].IsValid() )
 		{
-			if( health_bar_entities[1].GetEntity() is self )
+			if( g_arrehHealthBarEntities[1].GetEntity() is self )
 				return m_flOffset;
 		}
 
 		return 0.0;
 	}
 
+	void InitializeHUD()
+	{
+		for( int i = 1; i <= g_Engine.maxClients; ++i )
+		{
+			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+
+			if( pPlayer is null or !pPlayer.IsConnected() )
+			{
+				m_bVisibleToPlayer[i] = false;
+				continue;
+			}
+
+			if( pev.SpawnFlagBitSet(SPAWNFLAG_HEALTHBAR_PVS_ONLY) )
+				m_bVisibleToPlayer[i] = inPVS( pPlayer );
+			else
+				m_bVisibleToPlayer[i] = true;
+		}
+
+		for( int i = 1; i <= g_Engine.maxClients; ++i )
+		{
+			if( !m_bVisibleToPlayer[i] )
+				continue;
+
+			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( i );
+
+			if( pPlayer is null or !pPlayer.IsConnected() )
+			{
+				m_bVisibleToPlayer[ i ] = false;
+				m_bHUDInitializedPlayer[ i ] = false;
+				continue;
+			}
+
+			if( !m_bHUDInitializedPlayer[i] )
+			{
+				DrawText( pPlayer );
+				DrawBackground( pPlayer );
+				DrawHealthbar( pPlayer );
+
+				m_bHUDInitializedPlayer[ i ] = true;
+			}
+		}
+	}
+
 	void DrawText( CBasePlayer@ pPlayer )
 	{
-		if( !ShouldDrawText() )
-			return;
-
 		const string name = CONFIG_HEALTH_BAR_NAME;
 
 		CG_DrawHUDString( pPlayer, name );
@@ -225,22 +361,18 @@ class target_healthbar : ScriptBaseEntity
 
 	void CG_DrawHUDString( CBasePlayer@ pPlayer, const string &in sString )
 	{
-		HUDTextParams textParms;
-			textParms.fadeinTime = 0.0;
-			textParms.fadeoutTime = 0.1;
-			textParms.holdTime = 0.02;
-			textParms.effect = 0;
-			textParms.channel = HUD_TEXT_HEALTHBAR;
-			textParms.x = -1.0;
-			textParms.y = 0.1;
-			textParms.r1 = 0;
-			textParms.g1 = 255;
-			textParms.b1 = 255;
-			textParms.r2 = 0;
-			textParms.g2 = 0;
-			textParms.b2 = 255;
+		g_PlayerFuncs.HudMessage( pPlayer, m_textParms, sString + "\n" );
+	}
 
-		g_PlayerFuncs.HudMessage( pPlayer, textParms, sString + "\n" );
+	void DrawBackground( CBasePlayer@ pPlayer )
+	{
+		m_hudParamsHealthbarBG_L.channel = IsTopHealthbar() ? HUD_SPRITE_HB_BG_L : HUD_SPRITE_HB_BG_L+4;
+		m_hudParamsHealthbarBG_L.y = 0.13 + GetHealthbarOffset();
+		g_PlayerFuncs.HudCustomSprite( pPlayer, m_hudParamsHealthbarBG_L );
+
+		m_hudParamsHealthbarBG_R.channel = IsTopHealthbar() ? HUD_SPRITE_HB_BG_R : HUD_SPRITE_HB_BG_R+4;
+		m_hudParamsHealthbarBG_R.y = 0.13 + GetHealthbarOffset();
+		g_PlayerFuncs.HudCustomSprite( pPlayer, m_hudParamsHealthbarBG_R );
 	}
 
 	void UpdateHealthbarValue()
@@ -258,7 +390,7 @@ class target_healthbar : ScriptBaseEntity
 				if( m_flDelay > 0.0 )
 				{
 					m_flTimeToRemove = g_Engine.time + m_flDelay;
-					m_iBarValue = 1;
+					m_iBarValue = 1; //minimum value AKA monster is dead
 				}
 				else
 					g_EntityFuncs.Remove( self );
@@ -294,99 +426,130 @@ class target_healthbar : ScriptBaseEntity
 
 	void DrawHealthbar( CBasePlayer@ pPlayer )
 	{
-		//static background
-		HUDSpriteParams hudParamsHealthbarBG_L;
-			hudParamsHealthbarBG_L.fadeinTime = 0.0;
-			hudParamsHealthbarBG_L.fadeoutTime = 0.1;
-			hudParamsHealthbarBG_L.holdTime = 0.02;
-			hudParamsHealthbarBG_L.effect = 0;
-			hudParamsHealthbarBG_L.channel = ShouldDrawText() ? HUD_SPRITE_HB_BG_L : HUD_SPRITE_HB_BG_L+4;
-			hudParamsHealthbarBG_L.flags = HUD_SPR_MASKED;
-			hudParamsHealthbarBG_L.spritename = m_sHealthbarBGLeft;
-			hudParamsHealthbarBG_L.x = 0.25;
-			hudParamsHealthbarBG_L.y = 0.13 + GetHealthbarOffset();
-			hudParamsHealthbarBG_L.color1 = RGBA_WHITE;
-
-		hudParamsHealthbarBG_L.frame = 0;
-		g_PlayerFuncs.HudCustomSprite( pPlayer, hudParamsHealthbarBG_L );
-
-		HUDSpriteParams hudParamsHealthbarBG_R;
-			hudParamsHealthbarBG_R.fadeinTime = 0.0;
-			hudParamsHealthbarBG_R.fadeoutTime = 0.1;
-			hudParamsHealthbarBG_R.holdTime = 0.02;
-			hudParamsHealthbarBG_R.effect = 0;
-			hudParamsHealthbarBG_R.channel = ShouldDrawText() ? HUD_SPRITE_HB_BG_R : HUD_SPRITE_HB_BG_R+4;
-			hudParamsHealthbarBG_R.flags = HUD_SPR_MASKED;
-			hudParamsHealthbarBG_R.spritename = m_sHealthbarBGRight;
-			hudParamsHealthbarBG_R.x = 0.5;
-			hudParamsHealthbarBG_R.y = 0.13 + GetHealthbarOffset();
-			hudParamsHealthbarBG_R.color1 = RGBA_WHITE;
-
-		hudParamsHealthbarBG_R.frame = 0;
-		g_PlayerFuncs.HudCustomSprite( pPlayer, hudParamsHealthbarBG_R );
-
-		if( m_iBarValue == 1 )
-			return;
-
 		//"moving" healthbar
-		HUDSpriteParams hudParamsHealthbar_L;
-			hudParamsHealthbar_L.fadeinTime = 0.0;
-			hudParamsHealthbar_L.fadeoutTime = 0.1;
-			hudParamsHealthbar_L.holdTime = 0.02;
-			hudParamsHealthbar_L.effect = 0;
-			hudParamsHealthbar_L.channel = ShouldDrawText() ? HUD_SPRITE_HB_L : HUD_SPRITE_HB_L+4;
-			hudParamsHealthbar_L.flags = HUD_SPR_MASKED;
-			hudParamsHealthbar_L.spritename = m_sHealthbarLeft;
-			hudParamsHealthbar_L.x = 0.25;
-			hudParamsHealthbar_L.y = 0.13 + GetHealthbarOffset();
-			hudParamsHealthbar_L.width = m_iBarValue > (m_flWidthMax/2) ? 0 : m_iBarValue;
-			hudParamsHealthbar_L.color1 = RGBA_WHITE;
+		int iHalfWidth = int( m_flWidthMax / 2 );
 
-		hudParamsHealthbar_L.frame = 0;
-		g_PlayerFuncs.HudCustomSprite( pPlayer, hudParamsHealthbar_L );
+		m_hudParamsHealthbar_L.channel = IsTopHealthbar() ? HUD_SPRITE_HB_L : HUD_SPRITE_HB_L+4;
+		m_hudParamsHealthbar_L.y = 0.13 + GetHealthbarOffset();
+		m_hudParamsHealthbar_L.width = (m_iBarValue >= iHalfWidth) ? iHalfWidth : m_iBarValue; //hudParamsHealthbar_L.width = m_iBarValue > (m_flWidthMax/2) ? 0 : m_iBarValue;
+		g_PlayerFuncs.HudCustomSprite( pPlayer, m_hudParamsHealthbar_L );
 
 		if( m_iBarValue > (m_flWidthMax/2) )
 		{
-			HUDSpriteParams hudParamsHealthbar_R;
-				hudParamsHealthbar_R.fadeinTime = 0.0;
-				hudParamsHealthbar_R.fadeoutTime = 0.1;
-				hudParamsHealthbar_R.holdTime = 0.02;
-				hudParamsHealthbar_R.effect = 0;
-				hudParamsHealthbar_R.channel = ShouldDrawText() ? HUD_SPRITE_HB_R : HUD_SPRITE_HB_R+4;
-				hudParamsHealthbar_R.flags = HUD_SPR_MASKED;
-				hudParamsHealthbar_R.spritename = m_sHealthbarRight;
-				hudParamsHealthbar_R.x = 0.5;
-				hudParamsHealthbar_R.y = 0.13 + GetHealthbarOffset();
-				hudParamsHealthbar_R.width = m_iBarValue - (m_flWidthMax/2);
-				hudParamsHealthbar_R.color1 = RGBA_WHITE;
-
-			hudParamsHealthbar_R.frame = 0;
-			g_PlayerFuncs.HudCustomSprite( pPlayer, hudParamsHealthbar_R );
+			m_hudParamsHealthbar_R.channel = IsTopHealthbar() ? HUD_SPRITE_HB_R : HUD_SPRITE_HB_R+4;
+			m_hudParamsHealthbar_R.y = 0.13 + GetHealthbarOffset();
+			m_hudParamsHealthbar_R.width = (m_iBarValue > iHalfWidth) ? m_iBarValue - iHalfWidth : 0; //hudParamsHealthbar_R.width = m_iBarValue - int( m_flWidthMax / 2 );
+			g_PlayerFuncs.HudCustomSprite( pPlayer, m_hudParamsHealthbar_R );
 		}
 		else
-			g_PlayerFuncs.HudToggleElement( pPlayer, ShouldDrawText() ? HUD_SPRITE_HB_R : HUD_SPRITE_HB_R+4, false );
+			g_PlayerFuncs.HudToggleElement( pPlayer, IsTopHealthbar() ? HUD_SPRITE_HB_R : HUD_SPRITE_HB_R+4, false );
+	}
+
+	void DrawHUD()
+	{
+		bool bBarChanged = (m_iBarValue != m_iLastBarValue);
+
+		if( bBarChanged )
+			m_iLastBarValue = m_iBarValue;
+
+		// PVS checks less frequently
+		if( m_flNextPVSCheck <= g_Engine.time )
+		{
+			m_flNextPVSCheck = g_Engine.time + 0.5;
+
+			for( int i = 1; i <= g_Engine.maxClients; ++i )
+			{
+				CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+
+				if( pPlayer is null or !pPlayer.IsConnected() )
+				{
+					m_bVisibleToPlayer[i] = false;
+					continue;
+				}
+
+				if( pev.SpawnFlagBitSet(SPAWNFLAG_HEALTHBAR_PVS_ONLY) )
+					m_bVisibleToPlayer[i] = inPVS( pPlayer );
+				else
+					m_bVisibleToPlayer[i] = true;
+			}
+		}
+
+		for( int i = 1; i <= g_Engine.maxClients; ++i )
+		{
+			if( !m_bVisibleToPlayer[i] )
+				continue;
+
+			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( i );
+
+			if( pPlayer is null or !pPlayer.IsConnected() )
+			{
+				m_bVisibleToPlayer[ i ] = false;
+				m_bHUDInitializedPlayer[ i ] = false;
+				continue;
+			}
+
+			if( !m_bHUDInitializedPlayer[i] )
+			{
+				DrawText( pPlayer );
+				DrawBackground( pPlayer );
+				DrawHealthbar( pPlayer );
+
+				m_bHUDInitializedPlayer[ i ] = true;
+			}
+			else if( bBarChanged )
+				DrawHealthbar(pPlayer);
+		}
+	}
+
+	void RemoveHUD()
+	{
+		int iOffset = IsTopHealthbar() ? 0 : 4;
+
+		for( int i = 1; i <= g_Engine.maxClients; ++i )
+		{
+			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( i );
+
+			if( pPlayer !is null and pPlayer.IsConnected() )
+			{
+				g_PlayerFuncs.HudToggleElement( pPlayer, HUD_SPRITE_HB_BG_L + iOffset, false );
+				g_PlayerFuncs.HudToggleElement( pPlayer, HUD_SPRITE_HB_BG_R + iOffset, false );
+				g_PlayerFuncs.HudToggleElement( pPlayer, HUD_SPRITE_HB_L + iOffset, false );
+				g_PlayerFuncs.HudToggleElement( pPlayer, HUD_SPRITE_HB_R + iOffset, false );
+
+				//HudToggleElement doesn't work for this blyat
+				if( IsTopHealthbar() and GetBottomHealthbar() is null )
+				{
+					m_textParms.holdTime = 0.01;
+					g_PlayerFuncs.HudMessage( pPlayer, m_textParms, "" );
+				}
+
+				//g_Game.AlertMessage( at_notice, "target_healthbar %1 RemoveHUD for player %2\n", pev.targetname, pPlayer.pev.netname );
+			}
+		}
 	}
 
 	void UpdateOnRemove()
 	{
+		ResetHUDInitialized();
+		RemoveHUD();
+
 		//update their position in the hierarchy
-		if( health_bar_entities[0].IsValid() and health_bar_entities[1].IsValid() )
+		if( g_arrehHealthBarEntities[0].IsValid() and g_arrehHealthBarEntities[1].IsValid() )
 		{
-			if( health_bar_entities[0].GetEntity() is self )
+			if( g_arrehHealthBarEntities[0].GetEntity() is self )
 			{
-				health_bar_entities[0] = health_bar_entities[1];
-				health_bar_entities[1] = null;
+				g_arrehHealthBarEntities[0] = g_arrehHealthBarEntities[1];
+				g_arrehHealthBarEntities[1] = null;
 			}
 		}
-		else if( health_bar_entities[0].GetEntity() is self )
-			health_bar_entities[0] = null;
+		else if( g_arrehHealthBarEntities[0].GetEntity() is self )
+			g_arrehHealthBarEntities[0] = null;
+
+		//Call this again because reasons OLOLOLOLOLOLOLOLOLOOLLL I know exactly what I'm doing
+		ResetHUDInitialized();
+		RemoveHUD();
 
 		BaseClass.UpdateOnRemove();
-	}
-
-	bool HasFlags( int iFlagVariable, int iFlags )
-	{
-		return (iFlagVariable & iFlags) != 0;
 	}
 }
 
@@ -398,3 +561,7 @@ void Register()
 
 
 } //end of namespace target_healthbar
+
+/* TODO
+	Update healthbars in MonsterTakeDamage hook instead ??
+*/
