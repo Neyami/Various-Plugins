@@ -1,0 +1,21 @@
+@PointClass base(Targetname, Angles) studio( "models/hl2/props_combine/health_charger001.mdl" ) = item_healthcharger : "Health Charger"
+[
+	// Outputs
+	//output OnPlayerUse(void) : "Fired when the player +USEs the charger."
+]
+
+
+@PointClass base(Targetname, Angles) studio( "models/hl2/props_combine/suit_charger001.mdl" ) = item_suitcharger : "Battery recharger"
+[
+	spawnflags(flags) =
+	[
+		8192  : "Citadel recharger" : 0
+		16384 : "Kleiner's recharger" : 0
+	]
+
+	// Outputs
+	//output OnHalfEmpty(void) : "Half-Empty"
+	//output OnEmpty(void) : "Empty"
+	//output OnFull(void) : "Recharged to full."
+	//output OnPlayerUse(void) : "Fired when the player +USEs the charger."
+]
