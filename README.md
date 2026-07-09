@@ -134,7 +134,12 @@ If no "message" is entered, the spawnflag "Use Monster's Displayname" (4) is req
 
 <BR>
 
+# Half-Life 2 Chargers
 
+#include the script  
+Call these two:  
+`hl2::item_healthcharger::Register();`  
+`hl2::item_suitcharger::Register();`  
+Check the .fgd
 
 <BR>
-
