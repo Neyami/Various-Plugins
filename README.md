@@ -135,6 +135,7 @@ If no "message" is entered, the spawnflag "Use Monster's Displayname" (4) is req
 <BR>
 
 # Half-Life 2 Chargers
+[Video](https://youtu.be/y8OcKforw0M)  
 
 #include the script  
 Call these two:  
