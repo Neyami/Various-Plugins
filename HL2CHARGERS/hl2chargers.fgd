@@ -1,6 +1,6 @@
 @PointClass base(Targetname, Angles) studio( "models/hl2/props_combine/health_charger001.mdl" ) = item_healthcharger : "Health Charger"
 [
-	onplayeruse(string) : "Fire On Player Use"
+	onplayeruse(target_destination) : "Fire On Player Use"
 
 	// Outputs
 	//output OnPlayerUse(void) : "Fired when the player +USEs the charger."
@@ -9,10 +9,10 @@
 
 @PointClass base(Targetname, Angles) studio( "models/hl2/props_combine/suit_charger001.mdl" ) = item_suitcharger : "Battery recharger"
 [
-	onhalfempty(string) : "Fire On Half Empty"
-	onempty(string) : "Fire On Empty"
-	onfull(string) : "Fire On Full (Recharged)"
-	onplayeruse(string) : "Fire On Player Use"
+	onhalfempty(target_destination) : "Fire On Half Empty"
+	onempty(target_destination) : "Fire On Empty"
+	onfull(target_destination) : "Fire On Full (Recharged)"
+	onplayeruse(target_destination) : "Fire On Player Use"
 
 	spawnflags(flags) =
 	[
